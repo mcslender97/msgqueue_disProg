@@ -8,10 +8,14 @@
 #include <sys/shm.h>
 #include <fcntl.h>
 
+struct taskInfo
+{
+    int currentCPU;
+    int currentAffinity;
+    int priority;
+};
 struct shared_use_mem
 {
-    int pid;
-    int priority;
-    int affinity;
-    unsigned int cpuNo;
+    int no_of_process;
+    struct taskInfo taskInfos[5];
 };

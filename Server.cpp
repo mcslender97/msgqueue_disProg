@@ -53,9 +53,30 @@ int main()
     //Setup shm, Server serve as the producer (write to shm)
     int running = 1;
     void *shared_memory = (void *)0;
-    struct shared_use_mem *shared_memory;
+    struct shared_use_mem *shmPtr = NULL;
     char buffer[512];
     int shmid;
+    //Create shared mem
+    shmid = shmget((key_t)1234, sizeof(shared_use_mem), 0666 | IPC_CREAT);
+    if (shmid == -1)
+    {
+        fprintf(stderr, "shmget failed\n");
+        exit(EXIT_FAILURE);
+    }
+    //attatch shared mem
+    shared_memory = shmat(shmid, (void *)0, 0);
+    if (shared_memory == (void *)-1)
+    {
+        fprintf(stderr, "shmat failed\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("Memory attached at %X\n", shared_memory);
+    if (shmctl(shmid, SHM_LOCK, 0) == -1)
+    {
+        return (-1);
+    }
+    shmPtr = (shared_use_mem *)shared_memory;
+    shmPtr->no_of_process = 0;
 
     // generate a unique key. The same parameters to this function will
     // always generate the same value. This is how multiple
@@ -87,7 +108,7 @@ int main()
          << endl;
 
     // recieve 10 messages from the client
-    for (int x = 0; x < 10; ++x) //ahhh we might miss messages :)
+    while (1) //ahhh we might miss messages :)
     {
         // this is where we receive messages:
         //  msqid - the id of the message queue
@@ -116,8 +137,16 @@ int main()
         }
 
         else
+        {
+            shmPtr->no_of_process++;
+            shmPtr->taskInfos[0].currentAffinity = msg.affinity;
+            shmPtr->taskInfos[0].currentCPU = msg.cpu;
+            shmPtr->taskInfos[0].priority = msg.priority;
+
             cout << "Pid Client2  = " << msg.mypid << " buff = " << msg.buff << "Affinity = " << msg.affinity << "CPU assignment = " << msg.cpu << "Priority of nice = " << msg.priority << endl;
-        cout << "Type: " << msg.messageType << endl;
+            cout << "Type: " << msg.messageType << endl;
+        }
+
         sleep(1);
     }
 

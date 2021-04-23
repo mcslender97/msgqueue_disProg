@@ -98,8 +98,8 @@ int main()
         //msg.messageType = 42;
 
         //if Accepted message include pid of client is received from server
-        msg.messageType = mypid;
-
+        //msg.messageType = mypid;
+        msg.messageType = 27;
         // place data into the message queue structure to send to the server
         //pid
         msg.mypid = (int)getpid();
