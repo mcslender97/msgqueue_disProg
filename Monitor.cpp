@@ -51,7 +51,7 @@ int main()
     shmPtr = (shared_use_mem *)shared_memory;
     while (1)
     {
-        cout << "Pid Client2  = " << 0 << "Affinity = " << shmPtr->taskInfos[0].currentAffinity << " CPU assignment = " << shmPtr->taskInfos[0].currentCPU << " Priority of nice = " << shmPtr->taskInfos[0].priority << endl;
+        cout << "Pid Client  = " << 0 << "Affinity = " << shmPtr->taskInfos[0].currentAffinity << " CPU assignment = " << shmPtr->taskInfos[0].currentCPU << " Priority of nice = " << shmPtr->taskInfos[0].priority << endl;
         sleep(2);
     }
 }

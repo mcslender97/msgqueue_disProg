@@ -121,33 +121,47 @@ int main()
         //   is set equal to "MSG_Q_CHANNEL"
         //  - flag values (not useful for this example).
         // this is a blocking example, working off the Q: possible thread option....
-        if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), MSG_CLIENT1_CHANNEL, IPC_NOWAIT) < 0)
+
+        if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), 42, IPC_NOWAIT) >= 0)
         {
+            // int approvedPID = msg.mypid;
+            // msg.messageType = approvedPID;
+            // msgsnd(msqid, )
+            if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), MSG_CLIENT2_CHANNEL, IPC_NOWAIT) < 0)
+            {
+                perror("msgrcv");
+                //exit(1);
+            }
+            if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), MSG_CLIENT2_CHANNEL, IPC_NOWAIT) < 0)
+            {
+                perror("msgrcv");
+                //exit(1);
+            }
 
-            perror("msgrcv1");
-            //exit(1);
+            else
+            {
+                shmPtr->no_of_process++;
+                if (msg.affinity != shmPtr->taskInfos[0].currentAffinity)
+                {
+                    shmPtr->taskInfos[0].currentAffinity = msg.affinity;
+                    cout << "\nAffinity changed: " << shmPtr->affinityChanged++ << endl;
+                }
+                if (msg.cpu != shmPtr->taskInfos[0].currentCPU)
+                {
+                    shmPtr->taskInfos[0].currentCPU = msg.cpu;
+                    cout << "\nCPU core changed: " << shmPtr->cpuChanged++ << endl;
+                }
+                if (msg.priority != shmPtr->taskInfos[0].priority)
+                {
+                    shmPtr->taskInfos[0].priority = msg.priority;
+                    cout << "\nPriority changed: " << shmPtr->priorityChanged++ << endl;
+                }
+
+                cout << "Type: " << msg.messageType << endl;
+            }
         }
-        else
-            cout << "Pid Client1 = " << msg.mypid << " buff = " << msg.buff << endl;
 
-        if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), MSG_CLIENT2_CHANNEL, IPC_NOWAIT) < 0)
-        {
-            perror("msgrcv2");
-            //exit(1);
-        }
-
-        else
-        {
-            shmPtr->no_of_process++;
-            shmPtr->taskInfos[0].currentAffinity = msg.affinity;
-            shmPtr->taskInfos[0].currentCPU = msg.cpu;
-            shmPtr->taskInfos[0].priority = msg.priority;
-
-            cout << "Pid Client2  = " << msg.mypid << " buff = " << msg.buff << "Affinity = " << msg.affinity << "CPU assignment = " << msg.cpu << "Priority of nice = " << msg.priority << endl;
-            cout << "Type: " << msg.messageType << endl;
-        }
-
-        sleep(1);
+        sleep(2);
     }
 
     // finally, deallocate the message queue

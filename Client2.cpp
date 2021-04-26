@@ -95,11 +95,12 @@ int main()
         // the 4th parameter of msgrcv() in the server.cpp code
 
         //Request to connect message//
-        //msg.messageType = 42;
+        msg.messageType = 42;
 
         //if Accepted message include pid of client is received from server
+
+        //(msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), mypid, IPC_NOWAIT) >= 0)
         //msg.messageType = mypid;
-        msg.messageType = 27;
         // place data into the message queue structure to send to the server
         //pid
         msg.mypid = (int)getpid();
@@ -110,12 +111,10 @@ int main()
         sched_getaffinity(0, sizeof(cpu_set_t), &cpuMask);
         msg.affinity = cpuMask.__bits[0];
         //Priority
-
         //message printout
         strncpy(msg.buff, "I am client2", sizeof(msg.buff));
         myPid = getpid();
         msg.priority = getpriority(PRIO_PROCESS, myPid);
-
         // this is where we send messages:
         //  msqid - the id of the message queue
         //  msg - the message structure which stores the
