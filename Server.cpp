@@ -122,43 +122,33 @@ int main()
         //  - flag values (not useful for this example).
         // this is a blocking example, working off the Q: possible thread option....
 
-        if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), 42, IPC_NOWAIT) >= 0)
+        if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), 42, IPC_NOWAIT) <= 0)
         {
             // int approvedPID = msg.mypid;
             // msg.messageType = approvedPID;
             // msgsnd(msqid, )
-            if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), MSG_CLIENT2_CHANNEL, IPC_NOWAIT) < 0)
+            perror("msgrcv");
+        }
+        else
+        {
+            shmPtr->no_of_process++;
+            if (msg.affinity != shmPtr->taskInfos[0].currentAffinity)
             {
-                perror("msgrcv");
-                //exit(1);
+                shmPtr->taskInfos[0].currentAffinity = msg.affinity;
+                cout << "\nAffinity changed: " << shmPtr->affinityChanged++ << endl;
             }
-            if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), MSG_CLIENT2_CHANNEL, IPC_NOWAIT) < 0)
+            if (msg.cpu != shmPtr->taskInfos[0].currentCPU)
             {
-                perror("msgrcv");
-                //exit(1);
+                shmPtr->taskInfos[0].currentCPU = msg.cpu;
+                cout << "\nCPU core changed: " << shmPtr->cpuChanged++ << endl;
+            }
+            if (msg.priority != shmPtr->taskInfos[0].priority)
+            {
+                shmPtr->taskInfos[0].priority = msg.priority;
+                cout << "\nPriority changed: " << shmPtr->priorityChanged++ << endl;
             }
 
-            else
-            {
-                shmPtr->no_of_process++;
-                if (msg.affinity != shmPtr->taskInfos[0].currentAffinity)
-                {
-                    shmPtr->taskInfos[0].currentAffinity = msg.affinity;
-                    cout << "\nAffinity changed: " << shmPtr->affinityChanged++ << endl;
-                }
-                if (msg.cpu != shmPtr->taskInfos[0].currentCPU)
-                {
-                    shmPtr->taskInfos[0].currentCPU = msg.cpu;
-                    cout << "\nCPU core changed: " << shmPtr->cpuChanged++ << endl;
-                }
-                if (msg.priority != shmPtr->taskInfos[0].priority)
-                {
-                    shmPtr->taskInfos[0].priority = msg.priority;
-                    cout << "\nPriority changed: " << shmPtr->priorityChanged++ << endl;
-                }
-
-                cout << "Type: " << msg.messageType << endl;
-            }
+            cout << "Type: " << msg.messageType << endl;
         }
 
         sleep(2);
