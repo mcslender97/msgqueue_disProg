@@ -27,7 +27,7 @@ int main()
     int running = 1;
     void *shared_memory = (void *)0;
     struct shared_use_mem *shmPtr = NULL;
-    char buffer[512];
+    char buffer[1024];
     int shmid;
     //Create shared mem
     shmid = shmget((key_t)1234, sizeof(shared_use_mem), 0666 | IPC_CREAT);
@@ -51,7 +51,11 @@ int main()
     shmPtr = (shared_use_mem *)shared_memory;
     while (1)
     {
-        cout << "Pid Client  = " << 0 << "Affinity = " << shmPtr->taskInfos[0].currentAffinity << " CPU assignment = " << shmPtr->taskInfos[0].currentCPU << " Priority of nice = " << shmPtr->taskInfos[0].priority << endl;
+        for (int i = 0; i < 5; i++)
+        {
+            cout << "Pid Client  = " << 0 << "Affinity = " << shmPtr->taskInfos[i].currentAffinity << " CPU assignment = " << shmPtr->taskInfos[i].currentCPU << " Priority of nice = " << shmPtr->taskInfos[i].priority << endl;
+        }
+
         sleep(2);
     }
 }

@@ -32,15 +32,13 @@ struct MsgQueue
     //current cpu assignment
     unsigned cpu;
 
-    char buff[512]; //string type, needs to be of a fixed size
+    char buff[1024]; //string type, needs to be of a fixed size
 };
 
 // message queue flag
 const int MSG_Q_KEY_FLAG = 0664;
 
-// message queue type
-const int MSG_Q_CHANNEL = 27;
-//Queue type for init connection
+//MSG Queue type for init connection
 const int OPEN_REQUEST_CHANNEL = 42;
 //only from this client, could use a PID or special task indiactor
 
@@ -53,8 +51,8 @@ int main()
     key_t key = -1;
     int msqid = -1;
     MsgQueue msg;
-    int mypid = getpid();
-    pid_t myPid;
+
+    pid_t myPid = getpid();
 
     // generate a unique key. The same parameters to this function will
     // always generate the same value. This is how multiple
@@ -95,15 +93,23 @@ int main()
         // the 4th parameter of msgrcv() in the server.cpp code
 
         //Request to connect message//
-        msg.messageType = 42;
 
         //if Accepted message include pid of client is received from server
 
-        //(msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), mypid, IPC_NOWAIT) >= 0)
-        //msg.messageType = mypid;
+        if (msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0) < 0)
+        {
+            cout << "Client requesting connect. ID is: " << myPid << endl;
+            msg.messageType = 42;
+        }
+        else
+        {
+            cout << "Server has approved current client: " << myPid << endl;
+            msg.messageType = myPid;
+        }
+        //
         // place data into the message queue structure to send to the server
         //pid
-        msg.mypid = (int)getpid();
+
         //CPU assignment
         syscall(SYS_getcpu, &cpu, &node, NULL);
         msg.cpu = cpu;
@@ -112,7 +118,7 @@ int main()
         msg.affinity = cpuMask.__bits[0];
         //Priority
         //message printout
-        strncpy(msg.buff, "I am client2", sizeof(msg.buff));
+        strncpy(msg.buff, "I am client", sizeof(msg.buff));
         myPid = getpid();
         msg.priority = getpriority(PRIO_PROCESS, myPid);
         // this is where we send messages:
@@ -129,7 +135,7 @@ int main()
             perror("msgsnd");
             //exit(1);
         }
-        cout << " clirent 2 sent msg: " << err << endl;
+        cout << " clirent 2 sent msg type: " << msg.messageType << endl;
         sleep(3);
     }
 

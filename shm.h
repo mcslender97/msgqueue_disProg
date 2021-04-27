@@ -13,10 +13,11 @@ struct taskInfo
     int currentCPU;
     int currentAffinity;
     int priority;
+    int pid;
 };
 struct shared_use_mem
 {
-    int pid;
+
     int no_of_process;
     struct taskInfo taskInfos[5];
     int affinityChanged = 0;
