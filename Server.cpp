@@ -25,7 +25,7 @@ struct MsgQueue
     // these variables are optional & you can add
     // more or less if you wish
     // pid of process
-    int myPid;
+    int mypid;
     //priority ( niceness )
     int priority;
     //CPU affinity
@@ -50,11 +50,7 @@ int main()
     int msqid = -1;
     MsgQueue msg;
     // List of task pid that was approved by system
-    int approvedPID[5];
-    for (int i = 0; i < 5; i++)
-    {
-        approvedPID[i] = -1;
-    }
+    int runningClients = 0;
 
     //Setup shm, Server serve as the producer (write to shm)
     int running = 1;
@@ -127,69 +123,69 @@ int main()
         //   is set equal to "MSG_Q_CHANNEL"
         //  - flag values (not useful for this example).
         // this is a blocking example, working off the Q: possible thread option..
-        if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), 42, IPC_NOWAIT) < 0)
+        if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), 0l, 0) < 0)
         {
             // msg.messageType = approvedPID;
             // msgsnd(msqid, )
             cout << "Waiting for client to send msg 42" << endl;
         }
-        else
+        else if (msg.messageType == 42)
         {
-            for (int i = 0; i < 5; i++)
+            msg.messageType = msg.mypid;
+            cout << "\nNew connection request from cliend pid: " << msg.mypid << endl;
+
+            if (msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0) < 0)
             {
-                if (msg.myPid != approvedPID[i])
-                {
-                    approvedPID[i] = msg.myPid;
-                    msg.messageType = approvedPID[i];
-                    cout << "Approved message from task id: " << approvedPID[i] << endl;
-                }
-            }
-        }
-        for (int i = 0; i < 5; i++)
-        {
-            if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), approvedPID[i], IPC_NOWAIT) < 0)
-            {
-                perror("msgrcv");
+                perror("msgsnd");
             }
             else
             {
-
-                shmPtr->no_of_process++;
-                if (msg.affinity != shmPtr->taskInfos[0].currentAffinity)
-                {
-                    shmPtr->taskInfos[0].currentAffinity = msg.affinity;
-                    shmPtr->affinityChanged++;
-                    cout << "\nAffinity changed: " << shmPtr->affinityChanged << endl;
-                }
-                if (msg.cpu != shmPtr->taskInfos[0].currentCPU)
-                {
-                    shmPtr->taskInfos[0].currentCPU = msg.cpu;
-                    shmPtr->cpuChanged++;
-                    cout << "\nCPU core changed: " << shmPtr->cpuChanged << endl;
-                }
-                if (msg.priority != shmPtr->taskInfos[0].priority)
-                {
-                    shmPtr->taskInfos[0].priority = msg.priority;
-                    shmPtr->priorityChanged++;
-                    cout << "\nPriority changed: " << shmPtr->priorityChanged << endl;
-                }
-
-                cout << "Type: " << msg.messageType << endl;
+                runningClients++;
+                shmPtr->no_of_process = runningClients;
+                shmPtr->taskInfos[runningClients - 1].currentAffinity = msg.affinity;
+                shmPtr->taskInfos[runningClients - 1].currentCPU = msg.cpu;
+                shmPtr->taskInfos[runningClients - 1].priority = msg.priority;
+                shmPtr->taskInfos[runningClients - 1].pid = msg.mypid;
             }
         }
+        else
+        {
+            for (int i = 0; i < shmPtr->no_of_process; i++)
+            {
+                if (msg.mypid == shmPtr->taskInfos[i].pid)
+                {
 
-        sleep(2);
+                    if (msg.affinity != shmPtr->taskInfos[i].currentAffinity)
+                    {
+                        shmPtr->taskInfos[i].currentAffinity = msg.affinity;
+                        shmPtr->taskInfos[i].affinityChanged++;
+                    }
+                    if (msg.cpu != shmPtr->taskInfos[i].currentCPU)
+                    {
+                        shmPtr->taskInfos[i].currentCPU = msg.cpu;
+                        shmPtr->taskInfos[i].cpuChanged++;
+                        //cout << "\nCPU core changed: " << shmPtr->cpuChanged << endl;
+                    }
+                    if (msg.priority != shmPtr->taskInfos[i].priority)
+                    {
+                        shmPtr->taskInfos[i].priority = msg.priority;
+                        shmPtr->taskInfos[i].priorityChanged++;
+                        //cout << "\nPriority changed: " << shmPtr->priorityChanged << endl;
+                    }
+
+                    cout << "Type: " << msg.messageType << endl;
+                }
+            }
+        }
+        usleep(10);
     }
+}
 
-    // finally, deallocate the message queue
-    /*
+// finally, deallocate the message queue
+/*
     if(msgctl(msqid, IPC_RMID, NULL) < 0)
     {
         perror("msgctl");
         exit(1);
     }
 */
-    cout << "\nServer is now shutting down!\n";
-
-    return 0;
-}
