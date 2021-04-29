@@ -12,7 +12,7 @@
 using namespace std;
 
 // Compile & Run
-// g++ Server.cpp -o Server
+// g++ Server.cpp -o Server -lstdc++
 // ./Server
 
 // the structure representing the message queue
@@ -40,8 +40,6 @@ struct MsgQueue
 const int MSG_Q_KEY_FLAG = 0666;
 
 // message queue data transfer channel
-const int MSG_CLIENT1_CHANNEL = 26;
-const int MSG_CLIENT2_CHANNEL = 27;
 
 int main()
 {
@@ -142,6 +140,7 @@ int main()
             {
                 runningClients++;
                 shmPtr->no_of_process = runningClients;
+                cout << "Number of running client is: " << runningClients;
                 shmPtr->taskInfos[runningClients - 1].currentAffinity = msg.affinity;
                 shmPtr->taskInfos[runningClients - 1].currentCPU = msg.cpu;
                 shmPtr->taskInfos[runningClients - 1].priority = msg.priority;

@@ -53,7 +53,7 @@ int main()
     {
         for (int i = 0; i <= shmPtr->no_of_process - 1; i++)
         {
-            cout << "Pid Client  = " << shmPtr->taskInfos[i].pid << "Affinity = " << shmPtr->taskInfos[i].currentAffinity << " CPU assignment = " << shmPtr->taskInfos[i].currentCPU << " Priority of nice = " << shmPtr->taskInfos[i].priority << endl;
+            cout << "Pid Client  = " << shmPtr->taskInfos[i].pid << " \nAffinity = " << shmPtr->taskInfos[i].currentAffinity << " \nCPU assignment = " << shmPtr->taskInfos[i].currentCPU << " \nPriority of nice = " << shmPtr->taskInfos[i].priority << endl;
             cout << "\nCPU core changed times: " << shmPtr->taskInfos[i].cpuChanged << endl;
             cout << "\nPriority changed times: " << shmPtr->taskInfos[i].priorityChanged << endl;
             cout << "\nAffinity changed times: " << shmPtr->taskInfos[i].affinityChanged << endl;

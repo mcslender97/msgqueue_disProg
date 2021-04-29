@@ -12,7 +12,7 @@
 using namespace std;
 
 // Compile & Run
-// g++ Client.cpp -o Client
+// g++ Client.cpp -o Client -lstdc++
 // ./Client
 
 // the structure representing the message queue
@@ -36,7 +36,7 @@ struct MsgQueue
 };
 
 // message queue flag
-const int MSG_Q_KEY_FLAG = 0664;
+const int MSG_Q_KEY_FLAG = 0666;
 
 //MSG Queue type for init connection
 const int OPEN_REQUEST_CHANNEL = 42;
@@ -97,17 +97,20 @@ int main()
 
         //if Accepted message include pid of client is received from server
         myPid = getpid();
-        if (msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0) < 0)
+        if (msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0) < 0) //if client does not succesfully sent the message
         {
             cout << "Client requesting connect. ID is: " << myPid << endl;
         }
         else
         {
-            msg.mypid = myPid;
+            msg.mypid = getpid(); //sent succesfully,
+            cout << getpid() << endl;
+            usleep(10);
+            //known error myPid of client != msg.mypid, could be type casting issue
             cout << "MSG sent from current client: " << myPid << endl;
-            if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), myPid, 0) >= 0)
+            if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), myPid, 0) >= 0) //get approved message from server
             {
-                msg.messageType = myPid;
+                //msg.messageType = myPid; //msg type is now the pid
                 cout << "Server approved request!" << endl;
             }
         }
@@ -140,7 +143,7 @@ int main()
             perror("msgsnd");
             //exit(1);
         }
-        cout << " clirent 2 sent msg type: " << msg.messageType << endl;
+        cout << " client 2 sent msg type: " << msg.messageType << endl;
         sleep(3);
     }
 
