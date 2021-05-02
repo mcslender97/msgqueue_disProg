@@ -9,31 +9,12 @@
 #include <sched.h>
 #include <sys/resource.h>
 #include <sys/syscall.h>
+#include "msq.h"
 using namespace std;
 
 // Compile & Run
 // g++ Client.cpp -o Client -lstdc++
 // ./Client
-
-// the structure representing the message queue
-// & must match the same layout as in the server.cpp
-struct MsgQueue
-{
-    // IMPORTANT: every message structure must start with this
-    long messageType;
-    // these variables are optional & you can add
-    // more or less if you wish
-    // pid of process
-    int mypid;
-    //priority ( niceness )
-    int priority;
-    //CPU affinity
-    int affinity;
-    //current cpu assignment
-    unsigned cpu;
-
-    char buff[1024]; //string type, needs to be of a fixed size
-};
 
 // message queue flag
 const int MSG_Q_KEY_FLAG = 0666;
@@ -84,36 +65,35 @@ int main()
          << "the key " << key
          << "\n\nNow sending messages....";
     //todo: block read msg queue until server use the msg queue to send msg wit type of pid
+    //Request to connect message//
+    msg.messageType = 42;
 
+    //if Accepted message include pid of client is received from server
+    myPid = getpid();
+    if (msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0) < 0) //if client does not succesfully sent the message
+    {
+        cout << "Request failed. Client ID is: " << myPid << endl;
+        exit(-1);
+    }
+    else
+    {
+        msg.mypid = getpid(); //sent succesfully,
+        cout << getpid() << endl;
+        usleep(10);
+        //known error myPid of client != msg.mypid, could be type casting issue
+        cout << "MSG sent from current client: " << myPid << endl;
+        if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), myPid, 0) >= 0) //get approved message from server
+        {
+            //msg.messageType = myPid; //msg type is now the pid
+            cout << "Server approved request!" << endl;
+        }
+    }
     //msg received: poll task info
     while (1)
     {
         int err = 0;
         // set the message type - this must match
         // the 4th parameter of msgrcv() in the server.cpp code
-
-        //Request to connect message//
-        msg.messageType = 42;
-
-        //if Accepted message include pid of client is received from server
-        myPid = getpid();
-        if (msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0) < 0) //if client does not succesfully sent the message
-        {
-            cout << "Client requesting connect. ID is: " << myPid << endl;
-        }
-        else
-        {
-            msg.mypid = getpid(); //sent succesfully,
-            cout << getpid() << endl;
-            usleep(10);
-            //known error myPid of client != msg.mypid, could be type casting issue
-            cout << "MSG sent from current client: " << myPid << endl;
-            if (msgrcv(msqid, &msg, sizeof(msg) - sizeof(long), myPid, 0) >= 0) //get approved message from server
-            {
-                //msg.messageType = myPid; //msg type is now the pid
-                cout << "Server approved request!" << endl;
-            }
-        }
         //
         // place data into the message queue structure to send to the server
         //pid
@@ -126,7 +106,7 @@ int main()
         msg.affinity = cpuMask.__bits[0];
         //Priority
         //message printout
-        strncpy(msg.buff, "I am client", sizeof(msg.buff));
+        //strncpy(msg.buff, "I am client", sizeof(msg.buff));
 
         msg.priority = getpriority(PRIO_PROCESS, myPid);
         // this is where we send messages:
@@ -138,7 +118,7 @@ int main()
         //   required.
         // 0 - flag values (not useful for this example).
         //       if(msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0) < 0)
-        if ((err = msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), IPC_NOWAIT)) < 0)
+        if ((err = msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0)) < 0)
         {
             perror("msgsnd");
             //exit(1);

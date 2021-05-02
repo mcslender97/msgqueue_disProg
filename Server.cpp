@@ -9,32 +9,12 @@
 #include <sys/resource.h>
 #include <sys/syscall.h>
 #include "shm.h"
+#include "msq.h"
 using namespace std;
 
 // Compile & Run
 // g++ Server.cpp -o Server -lstdc++
 // ./Server
-
-// the structure representing the message queue
-// & must match the same layout as in the client.cpp
-struct MsgQueue
-{
-    // IMPORTANT: every message structure must start with this
-    long messageType;
-
-    // these variables are optional & you can add
-    // more or less if you wish
-    // pid of process
-    int mypid;
-    //priority ( niceness )
-    int priority;
-    //CPU affinity
-    int affinity;
-    //current cpu assignment
-    unsigned cpu;
-
-    char buff[1024]; //string type, needs to be of a fixed size
-};
 
 // message queue flag
 const int MSG_Q_KEY_FLAG = 0666;
@@ -127,31 +107,35 @@ int main()
             // msgsnd(msqid, )
             cout << "Waiting for client to send msg 42" << endl;
         }
-        else if (msg.messageType == 42)
+        else if (msg.messageType == 42) //connection request received
         {
-            msg.messageType = msg.mypid;
+            //Debug: check  the pid and message type
             cout << "\nNew connection request from cliend pid: " << msg.mypid << endl;
+            cout << "\nNew connection request from cliend pid: " << msg.messageType << endl;
+            //set the message type to pid of client for return message
+            msg.messageType = msg.mypid;
 
-            if (msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0) < 0)
+            if (msgsnd(msqid, &msg, sizeof(msg) - sizeof(long), 0) < 0) //send message
             {
-                perror("msgsnd");
+                perror("msgsnd"); //failed
             }
-            else
+            else //success
             {
                 runningClients++;
                 shmPtr->no_of_process = runningClients;
                 cout << "Number of running client is: " << runningClients;
+
                 shmPtr->taskInfos[runningClients - 1].currentAffinity = msg.affinity;
                 shmPtr->taskInfos[runningClients - 1].currentCPU = msg.cpu;
                 shmPtr->taskInfos[runningClients - 1].priority = msg.priority;
                 shmPtr->taskInfos[runningClients - 1].pid = msg.mypid;
             }
         }
-        else
+        else //receive message of type pid of connected client
         {
             for (int i = 0; i < shmPtr->no_of_process; i++)
             {
-                if (msg.mypid == shmPtr->taskInfos[i].pid)
+                if (msg.mypid == shmPtr->taskInfos[i].pid) //find corresponding client and update info
                 {
 
                     if (msg.affinity != shmPtr->taskInfos[i].currentAffinity)
