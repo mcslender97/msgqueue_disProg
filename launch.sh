@@ -1,3 +1,4 @@
-Server&
-Client1 &
-Client2 &
+server & 
+client & 
+client & 
+monitor
